@@ -69,4 +69,8 @@ export interface RepoInfo {
   topics: string[];
   readme: string;
   languages: Record<string, number>;
+  directoryTree: string;
+  configFiles: Record<string, string>;
+  sampleCode: { path: string; content: string }[];
+  recentCommits: string[];
 }
