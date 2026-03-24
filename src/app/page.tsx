@@ -22,6 +22,11 @@ export default function Home() {
   const toApiImages = (imgs: UploadedImage[]) =>
     imgs.map((img) => ({ data: img.data, mediaType: img.mediaType }));
 
+  const openPreview = (s: VideoScenario) => {
+    sessionStorage.setItem("promo-scenario", JSON.stringify(s));
+    window.open("/preview", "_blank");
+  };
+
   const handleGenerate = async () => {
     if (!repoUrl.trim()) return;
 
@@ -51,6 +56,7 @@ export default function Home() {
 
       setScenario(data.scenario);
       setStep("done");
+      openPreview(data.scenario);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Something went wrong");
       setStep("error");
@@ -89,6 +95,7 @@ export default function Home() {
       setRevisionInput("");
       setRevisionImages([]);
       setStep("done");
+      openPreview(data.scenario);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Something went wrong");
       setStep("done");
@@ -236,18 +243,26 @@ export default function Home() {
               <h2 className="text-xl font-bold text-white">
                 {scenario.meta.repoName}
               </h2>
-              <button
-                onClick={() => {
-                  setStep("idle");
-                  setScenario(null);
-                  setRevisionHistory([]);
-                  setRevisionInput("");
-                  setRevisionImages([]);
-                }}
-                className="px-4 py-2 rounded-lg border border-white/10 text-white/60 text-sm hover:text-white hover:border-white/30 transition"
-              >
-                新しく作る
-              </button>
+              <div className="flex gap-2">
+                <button
+                  onClick={() => openPreview(scenario)}
+                  className="px-4 py-2 rounded-lg bg-indigo-500/20 border border-indigo-500/30 text-indigo-300 text-sm hover:bg-indigo-500/30 transition"
+                >
+                  別タブで開く
+                </button>
+                <button
+                  onClick={() => {
+                    setStep("idle");
+                    setScenario(null);
+                    setRevisionHistory([]);
+                    setRevisionInput("");
+                    setRevisionImages([]);
+                  }}
+                  className="px-4 py-2 rounded-lg border border-white/10 text-white/60 text-sm hover:text-white hover:border-white/30 transition"
+                >
+                  新しく作る
+                </button>
+              </div>
             </div>
 
             <VideoPreview scenario={scenario} />
