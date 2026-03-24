@@ -21,7 +21,8 @@ export type SceneConfig =
   | StatsSceneConfig
   | FeaturesSceneConfig
   | CodeSceneConfig
-  | CtaSceneConfig;
+  | CtaSceneConfig
+  | AppDemoSceneConfig;
 
 interface BaseScene {
   type: string;
@@ -57,6 +58,44 @@ export interface CtaSceneConfig extends BaseScene {
   headline: string;
   buttonText: string;
   repoUrl: string;
+}
+
+// 操作デモシーン
+export interface AppDemoSceneConfig extends BaseScene {
+  type: "app-demo";
+  browserUrl: string;
+  steps: AppDemoStep[];
+}
+
+export interface AppDemoStep {
+  caption: string; // 画面下に出る説明テキスト (例: "アカウントを選択して投稿を作成")
+  sidebar?: { items: string[]; activeIndex: number };
+  header?: string;
+  content: AppDemoElement[];
+  clickTarget?: number; // contentの何番目をクリックするか (0-indexed)
+  afterClickChanges?: {
+    // クリック後の変化
+    type: "toast" | "modal" | "update" | "navigate";
+    text: string;
+  };
+}
+
+export interface AppDemoElement {
+  type:
+    | "card"
+    | "button"
+    | "input"
+    | "toggle"
+    | "table-row"
+    | "stat-card"
+    | "text-block"
+    | "image-placeholder"
+    | "list-item"
+    | "progress-bar";
+  label: string;
+  value?: string;
+  color?: string;
+  active?: boolean;
 }
 
 export interface RepoInfo {

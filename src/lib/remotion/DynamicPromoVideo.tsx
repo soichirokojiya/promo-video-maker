@@ -6,6 +6,7 @@ import { StatsScene } from "./scenes/StatsScene";
 import { FeaturesScene } from "./scenes/FeaturesScene";
 import { CodeScene } from "./scenes/CodeScene";
 import { CtaScene } from "./scenes/CtaScene";
+import { AppDemoScene } from "./scenes/AppDemoScene";
 
 export const DynamicPromoVideo: React.FC<{ scenario: VideoScenario }> = ({
   scenario,
@@ -54,6 +55,13 @@ export const DynamicPromoVideo: React.FC<{ scenario: VideoScenario }> = ({
             )}
             {scene.type === "cta" && (
               <CtaScene
+                config={scene}
+                primaryColor={theme.primaryColor}
+                secondaryColor={theme.secondaryColor}
+              />
+            )}
+            {scene.type === "app-demo" && (
+              <AppDemoScene
                 config={scene}
                 primaryColor={theme.primaryColor}
                 secondaryColor={theme.secondaryColor}

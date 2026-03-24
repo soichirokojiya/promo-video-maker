@@ -119,11 +119,11 @@ export default function Home() {
 
           {/* Custom Prompt */}
           <textarea
-            placeholder="（任意）動画の指示: 例「複数のXアカウントを自動投稿できるところをわかりやすく印象的に伝えて」"
+            placeholder={"動画の指示を自由に書いてください。例:\n• 複数Xアカウントの自動投稿機能を操作デモで見せて\n• タイトルなしで操作画面だけ30秒で\n• ダッシュボード→設定画面→投稿完了の流れを見せて"}
             value={prompt}
             onChange={(e) => setPrompt(e.target.value)}
             disabled={isLoading}
-            rows={2}
+            rows={4}
             className="w-full px-5 py-3 rounded-xl bg-white/5 border border-white/10 text-white placeholder-white/25 text-sm focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 transition resize-none disabled:opacity-50"
           />
 

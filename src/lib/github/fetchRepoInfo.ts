@@ -103,35 +103,66 @@ async function fetchConfigFiles(
   return configs;
 }
 
-// 主要なソースファイルを取得（エントリポイントや重要ファイル）
+// 主要なソースファイルを取得（UI・レイアウト・ルーティング重視）
 const SOURCE_PATTERNS = [
-  // エントリポイント系
-  "src/index.ts",
+  // レイアウト・ページ（UIを理解するのに最重要）
+  "src/App.tsx",
+  "src/App.jsx",
+  "src/App.vue",
+  "app/layout.tsx",
+  "app/page.tsx",
+  "pages/index.tsx",
+  "pages/index.jsx",
+  "src/app.tsx",
+  "src/app.jsx",
+  // ルーティング（画面構成を理解）
+  "src/routes.tsx",
+  "src/routes.ts",
+  "src/router.tsx",
+  "src/router.ts",
+  "src/routes/index.ts",
+  "src/routes/index.tsx",
+  // エントリ
   "src/index.tsx",
-  "src/index.js",
-  "src/main.ts",
+  "src/index.ts",
   "src/main.tsx",
-  "src/main.rs",
-  "src/main.go",
-  "main.go",
+  "src/main.ts",
+  "index.ts",
   "main.py",
   "app.py",
-  "src/app.ts",
-  "src/app.tsx",
-  "src/App.tsx",
-  "src/lib.rs",
-  "cmd/main.go",
-  "index.ts",
-  "index.js",
-  // API・ルーティング系
-  "src/routes/index.ts",
-  "src/api/index.ts",
+  "main.go",
+  "src/main.rs",
+  // サーバー
   "src/server.ts",
   "src/server.js",
-  "app/page.tsx",
-  "app/layout.tsx",
-  "pages/index.tsx",
-  "pages/index.js",
+  "src/api/index.ts",
+];
+
+// UIコンポーネントを探すパターン
+const UI_FILE_PATTERNS = [
+  /components?\/(Dashboard|Home|Layout|Sidebar|Header|Nav|Main|App)/i,
+  /pages?\/(index|home|dashboard|main)/i,
+  /views?\/(index|home|dashboard|main)/i,
+  /screens?\/(Home|Main|Dashboard)/i,
+  /app\/.+\/page\.(tsx|jsx|ts|js)$/,
+  /templates?\//i,
+];
+
+// CSS・スタイリング
+const STYLE_PATTERNS = [
+  "src/index.css",
+  "src/App.css",
+  "src/styles/globals.css",
+  "src/styles/global.css",
+  "app/globals.css",
+  "styles/globals.css",
+  "tailwind.config.js",
+  "tailwind.config.ts",
+  "theme.ts",
+  "theme.js",
+  "src/theme.ts",
+  "src/theme/index.ts",
+  "src/styles/theme.ts",
 ];
 
 async function fetchSampleCode(
@@ -139,30 +170,37 @@ async function fetchSampleCode(
   repo: string,
   tree: string
 ): Promise<{ path: string; content: string }[]> {
-  // ツリーに存在するファイルだけ取得
-  const filesToFetch = SOURCE_PATTERNS.filter((f) => tree.includes(f)).slice(
-    0,
-    5
+  const treeLines = tree
+    .split("\n")
+    .map((l) => l.trim().replace(/^📁 |^   /, ""));
+
+  // 1. 定義済みパターンにマッチするファイル
+  const patternMatches = SOURCE_PATTERNS.filter((f) => tree.includes(f));
+
+  // 2. UIコンポーネントファイルをツリーから発見
+  const uiFiles = treeLines.filter((f) =>
+    UI_FILE_PATTERNS.some((p) => p.test(f))
   );
 
-  // ツリーからさらに重要そうなファイルを発見
-  const treeLines = tree.split("\n").map((l) => l.trim().replace(/^📁 |^   /, ""));
-  const extraFiles = treeLines
-    .filter(
-      (f) =>
-        !f.includes("/") && // ルート直下
-        f.match(/\.(ts|tsx|js|jsx|py|rs|go|rb|java)$/) &&
-        !f.match(/config|test|spec|\.d\.ts/) &&
-        !filesToFetch.includes(f)
-    )
-    .slice(0, 2);
+  // 3. CSSスタイリングファイル
+  const styleFiles = STYLE_PATTERNS.filter((f) => tree.includes(f));
 
-  const allFiles = [...filesToFetch, ...extraFiles].slice(0, 5);
+  // 優先度: UIコンポーネント > レイアウト/ページ > スタイル > エントリ
+  const allFiles = [
+    ...uiFiles.slice(0, 4),
+    ...patternMatches.slice(0, 4),
+    ...styleFiles.slice(0, 2),
+  ];
+
+  // 重複排除して最大10ファイル
+  const uniqueFiles = [...new Set(allFiles)].slice(0, 10);
 
   const results = await Promise.allSettled(
-    allFiles.map(async (f) => {
-      const content = await ghFetchRaw(`/repos/${owner}/${repo}/contents/${f}`);
-      return { path: f, content: content.slice(0, 2000) };
+    uniqueFiles.map(async (f) => {
+      const content = await ghFetchRaw(
+        `/repos/${owner}/${repo}/contents/${f}`
+      );
+      return { path: f, content: content.slice(0, 3000) };
     })
   );
 
