@@ -6,7 +6,7 @@ export const maxDuration = 30;
 
 export async function POST(request: Request) {
   try {
-    const { repoUrl, prompt } = await request.json();
+    const { repoUrl, prompt, images } = await request.json();
 
     if (!repoUrl || typeof repoUrl !== "string") {
       return NextResponse.json(
@@ -27,7 +27,8 @@ export async function POST(request: Request) {
     const repoInfo = await fetchRepoInfo(repoUrl);
     const scenario = await generateScenario(
       repoInfo,
-      prompt && typeof prompt === "string" ? prompt : undefined
+      prompt && typeof prompt === "string" ? prompt : undefined,
+      images && Array.isArray(images) ? images : undefined
     );
 
     return NextResponse.json({ scenario, repoInfo });
