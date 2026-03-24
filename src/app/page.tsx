@@ -5,11 +5,6 @@ import { VideoScenario } from "@/lib/types/scenario";
 import { VideoPreview } from "@/components/VideoPreview";
 import { ImageUpload, UploadedImage } from "@/components/ImageUpload";
 
-const EXAMPLES = [
-  { label: "Express.js", url: "https://github.com/expressjs/express" },
-  { label: "Next.js", url: "https://github.com/vercel/next.js" },
-  { label: "Deno", url: "https://github.com/denoland/deno" },
-];
 
 type Step = "idle" | "fetching" | "generating" | "done" | "error" | "revising";
 
@@ -197,18 +192,6 @@ export default function Home() {
               disabled={isLoading}
             />
 
-            <div className="flex items-center gap-2 flex-wrap">
-              <span className="text-xs text-white/30">例:</span>
-              {EXAMPLES.map((ex) => (
-                <button
-                  key={ex.url}
-                  onClick={() => setRepoUrl(ex.url)}
-                  className="px-3 py-1 text-xs rounded-full border border-white/10 text-white/50 hover:text-white hover:border-white/30 transition"
-                >
-                  {ex.label}
-                </button>
-              ))}
-            </div>
           </div>
         )}
 
