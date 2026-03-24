@@ -100,7 +100,7 @@ ${repoInfo.readme}`;
   content.push({ type: "text", text: textContent });
 
   const response = await client.messages.create({
-    model: "claude-sonnet-4-20250514",
+    model: "claude-opus-4-20250514",
     max_tokens: 4000,
     system: SYSTEM_PROMPT,
     messages: [{ role: "user", content }],
