@@ -1,11 +1,11 @@
 "use client";
 
-import { useRef } from "react";
+import { useRef, useState, useCallback } from "react";
 
 export interface UploadedImage {
   data: string;
   mediaType: string;
-  preview: string; // object URL for display
+  preview: string;
   name: string;
 }
 
@@ -19,26 +19,62 @@ export function ImageUpload({
   disabled?: boolean;
 }) {
   const inputRef = useRef<HTMLInputElement>(null);
+  const [isDragging, setIsDragging] = useState(false);
 
-  const handleFiles = async (files: FileList | null) => {
-    if (!files) return;
+  const processFiles = useCallback(
+    async (files: File[]) => {
+      const newImages: UploadedImage[] = [];
 
-    const newImages: UploadedImage[] = [];
+      for (const file of files) {
+        if (!file.type.startsWith("image/")) continue;
+        if (file.size > 10 * 1024 * 1024) continue;
 
-    for (const file of Array.from(files)) {
-      if (!file.type.startsWith("image/")) continue;
-      if (file.size > 10 * 1024 * 1024) continue; // 10MB limit
+        const base64 = await fileToBase64(file);
+        newImages.push({
+          data: base64,
+          mediaType: file.type,
+          preview: URL.createObjectURL(file),
+          name: file.name,
+        });
+      }
 
-      const base64 = await fileToBase64(file);
-      newImages.push({
-        data: base64,
-        mediaType: file.type,
-        preview: URL.createObjectURL(file),
-        name: file.name,
-      });
+      if (newImages.length > 0) {
+        onChange([...images, ...newImages]);
+      }
+    },
+    [images, onChange]
+  );
+
+  const handleFileInput = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files) {
+      processFiles(Array.from(e.target.files));
     }
+    e.target.value = "";
+  };
 
-    onChange([...images, ...newImages]);
+  const handleDrop = useCallback(
+    (e: React.DragEvent) => {
+      e.preventDefault();
+      e.stopPropagation();
+      setIsDragging(false);
+      if (disabled) return;
+      if (e.dataTransfer.files) {
+        processFiles(Array.from(e.dataTransfer.files));
+      }
+    },
+    [disabled, processFiles]
+  );
+
+  const handleDragOver = (e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    if (!disabled) setIsDragging(true);
+  };
+
+  const handleDragLeave = (e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDragging(false);
   };
 
   const removeImage = (index: number) => {
@@ -46,51 +82,77 @@ export function ImageUpload({
     onChange(images.filter((_, i) => i !== index));
   };
 
+  const openFilePicker = () => {
+    inputRef.current?.click();
+  };
+
   return (
     <div className="space-y-2">
-      <div className="flex items-center gap-2">
-        <button
-          type="button"
-          onClick={() => inputRef.current?.click()}
-          disabled={disabled}
-          className="flex items-center gap-2 px-3 py-1.5 text-xs rounded-lg border border-white/10 text-white/50 hover:text-white hover:border-white/30 transition disabled:opacity-50"
+      {/* Drop zone / button */}
+      <div
+        onDrop={handleDrop}
+        onDragOver={handleDragOver}
+        onDragLeave={handleDragLeave}
+        onClick={disabled ? undefined : openFilePicker}
+        className={`
+          flex items-center justify-center gap-2 px-4 py-3 rounded-lg border border-dashed cursor-pointer transition
+          ${
+            isDragging
+              ? "border-indigo-500 bg-indigo-500/10 text-white"
+              : "border-white/15 text-white/50 hover:text-white hover:border-white/30"
+          }
+          ${disabled ? "opacity-50 cursor-not-allowed" : ""}
+        `}
+      >
+        <svg
+          width="16"
+          height="16"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          strokeWidth="2"
         >
-          <svg
-            width="14"
-            height="14"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth="2"
-          >
-            <rect x="3" y="3" width="18" height="18" rx="2" ry="2" />
-            <circle cx="8.5" cy="8.5" r="1.5" />
-            <polyline points="21 15 16 10 5 21" />
-          </svg>
-          スクショを追加
-        </button>
+          <rect x="3" y="3" width="18" height="18" rx="2" ry="2" />
+          <circle cx="8.5" cy="8.5" r="1.5" />
+          <polyline points="21 15 16 10 5 21" />
+        </svg>
+        <span className="text-xs">
+          {isDragging
+            ? "ここにドロップ"
+            : "スクショを追加（クリックまたはドラッグ&ドロップ）"}
+        </span>
         {images.length > 0 && (
-          <span className="text-xs text-white/30">
-            {images.length}枚の画像
+          <span className="text-xs text-white/30 ml-1">
+            {images.length}枚
           </span>
         )}
       </div>
 
+      {/* Hidden file input */}
       <input
         ref={inputRef}
         type="file"
-        accept="image/*"
+        accept="image/png,image/jpeg,image/gif,image/webp"
         multiple
-        onChange={(e) => handleFiles(e.target.files)}
-        className="hidden"
+        onChange={handleFileInput}
+        style={{
+          position: "absolute",
+          width: 1,
+          height: 1,
+          overflow: "hidden",
+          clip: "rect(0,0,0,0)",
+          whiteSpace: "nowrap",
+          border: 0,
+        }}
       />
 
+      {/* Thumbnails */}
       {images.length > 0 && (
         <div className="flex gap-2 flex-wrap">
           {images.map((img, i) => (
             <div
               key={i}
-              className="relative group w-20 h-20 rounded-lg overflow-hidden border border-white/10"
+              className="relative group w-24 h-16 rounded-lg overflow-hidden border border-white/10"
             >
               <img
                 src={img.preview}
@@ -98,12 +160,19 @@ export function ImageUpload({
                 className="w-full h-full object-cover"
               />
               <button
-                onClick={() => removeImage(i)}
+                type="button"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  removeImage(i);
+                }}
                 disabled={disabled}
-                className="absolute top-0 right-0 w-5 h-5 bg-black/70 text-white text-xs flex items-center justify-center rounded-bl opacity-0 group-hover:opacity-100 transition"
+                className="absolute top-0.5 right-0.5 w-5 h-5 bg-black/80 text-white text-xs flex items-center justify-center rounded-full opacity-0 group-hover:opacity-100 transition"
               >
-                x
+                &times;
               </button>
+              <div className="absolute bottom-0 left-0 right-0 bg-black/60 text-white/70 text-[9px] px-1 py-0.5 truncate">
+                {img.name}
+              </div>
             </div>
           ))}
         </div>
@@ -117,7 +186,6 @@ function fileToBase64(file: File): Promise<string> {
     const reader = new FileReader();
     reader.onload = () => {
       const result = reader.result as string;
-      // Remove "data:image/png;base64," prefix
       resolve(result.split(",")[1]);
     };
     reader.onerror = reject;
